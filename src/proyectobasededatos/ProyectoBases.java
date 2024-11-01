@@ -23,11 +23,13 @@ public class ProyectoBases extends Application {
             Base.setResizable(false);
             Base.show();
         } catch (IOException e) {
-            System.exit(1); // Exit the application
+            e.printStackTrace();
+            System.exit(1);
         }
+
     }
-    
-    public static void main(String[] args) {                         
-        launch(args);                                  
+
+    public static void main(String[] args) {
+        launch(args);
     }
 }

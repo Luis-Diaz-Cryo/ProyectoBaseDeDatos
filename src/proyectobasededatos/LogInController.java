@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
  */
-package proyectobases;
+package proyectobasededatos;
 
 import java.io.IOException;
 import java.net.URL;
@@ -72,6 +72,7 @@ public class LogInController implements Initializable {
             goToMenu();
 
         } catch (SQLException e) {
+             e.printStackTrace();
             showAlert(Alert.AlertType.ERROR, "Error de Conexión", "Por favor, revisa tus credenciales.");
         }
     }
