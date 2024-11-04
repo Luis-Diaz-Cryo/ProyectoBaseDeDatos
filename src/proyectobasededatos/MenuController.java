@@ -17,9 +17,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -51,42 +51,61 @@ public class MenuController implements Initializable {
     private Button btn_consultas;
 
     private Connection connection;
+
     @FXML
     private AnchorPane panel_tabla1;
     @FXML
     private AnchorPane panel_tabla2;
 
+    // Variables to save state
+    private String selectedDatabase;
+    private String selectedTableOption;
+    private String selectedTable1;
+    private String selectedTable2;
+
+    // To save the menu scene for later use
+    private Scene menuScene;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         cb_tabla.getItems().addAll("1", "2");
 
+        // Initially disable the table panels
         panel_tabla1.setDisable(true);
         panel_tabla2.setDisable(true);
 
+        // Restore previous selections if they exist
+        if (selectedDatabase != null) {
+            cb_base.getSelectionModel().select(selectedDatabase);
+            cargarTablasDisponibles(selectedDatabase);
+        }
+        if (selectedTableOption != null) {
+            cb_tabla.getSelectionModel().select(selectedTableOption);
+            verificarSeleccion();
+        }
+        if (selectedTable1 != null) {
+            cb_tabla1.getSelectionModel().select(selectedTable1);
+        }
+        if (selectedTable2 != null) {
+            cb_tabla2.getSelectionModel().select(selectedTable2);
+        }
+
+        // Add listeners for choice boxes to update table options based on selections
         cb_base.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 cargarTablasDisponibles(newValue);
             }
         });
 
-        cb_tabla.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            verificarSeleccion();
-        });
-
-        cb_tabla1.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            actualizarTablasDisponibles();
-        });
-
-        cb_tabla2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            actualizarTablasDisponibles();
-        });
+        cb_tabla.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> verificarSeleccion());
+        cb_tabla1.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> actualizarTablasDisponibles());
+        cb_tabla2.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> actualizarTablasDisponibles());
     }
 
     private void cargarTablasDisponibles(String baseSeleccionada) {
         try {
             Statement statement = connection.createStatement();
             statement.execute("USE " + baseSeleccionada);
-
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
 
             cb_tabla1.getItems().clear();
@@ -99,7 +118,6 @@ public class MenuController implements Initializable {
             }
 
             actualizarTablasDisponibles();
-
         } catch (SQLException e) {
             showAlert(AlertType.ERROR, "Error al cargar tablas", e.getMessage());
         }
@@ -114,17 +132,13 @@ public class MenuController implements Initializable {
     }
 
     private void verificarSeleccion() {
-        String baseSeleccionada = cb_base.getSelectionModel().getSelectedItem();
         String tablaSeleccionada = cb_tabla.getSelectionModel().getSelectedItem();
-
-        if (baseSeleccionada != null && tablaSeleccionada != null) {
-            if (tablaSeleccionada.equals("1")) {
-                panel_tabla1.setDisable(false);
-                panel_tabla2.setDisable(true);
-            } else if (tablaSeleccionada.equals("2")) {
-                panel_tabla1.setDisable(false);
-                panel_tabla2.setDisable(false);
-            }
+        if ("1".equals(tablaSeleccionada)) {
+            panel_tabla1.setDisable(false);
+            panel_tabla2.setDisable(true);
+        } else if ("2".equals(tablaSeleccionada)) {
+            panel_tabla1.setDisable(false);
+            panel_tabla2.setDisable(false);
         } else {
             panel_tabla1.setDisable(true);
             panel_tabla2.setDisable(true);
@@ -142,12 +156,10 @@ public class MenuController implements Initializable {
             ResultSet resultSet = statement.executeQuery("SHOW DATABASES");
 
             cb_base.getItems().clear();
-
             while (resultSet.next()) {
                 String databaseName = resultSet.getString(1);
                 cb_base.getItems().add(databaseName);
             }
-
         } catch (SQLException e) {
             showAlert(AlertType.ERROR, "Error al cargar bases de datos.", e.getMessage());
         }
@@ -162,6 +174,12 @@ public class MenuController implements Initializable {
 
     @FXML
     private void GoVer(ActionEvent event) {
+        // Save selections before switching screens
+        selectedDatabase = cb_base.getSelectionModel().getSelectedItem();
+        selectedTableOption = cb_tabla.getSelectionModel().getSelectedItem();
+        selectedTable1 = cb_tabla1.getSelectionModel().getSelectedItem();
+        selectedTable2 = cb_tabla2.getSelectionModel().getSelectedItem();
+
         try {
             ChoiceBox<String> selectedChoiceBox = (event.getSource() == btn_ver1) ? cb_tabla1 : cb_tabla2;
             String selectedTable = selectedChoiceBox.getSelectionModel().getSelectedItem();
@@ -178,19 +196,23 @@ public class MenuController implements Initializable {
             tablaController.setConnectionAndTable(connection, selectedTable);
 
             Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
+            menuScene = stage.getScene();  // Save the current scene before switching
+            stage.setScene(new Scene(root));
             stage.show();
-
         } catch (IOException e) {
             showAlert(AlertType.ERROR, "Error de Carga", "No se pudo cargar la pantalla de la tabla.");
             e.printStackTrace();
         }
     }
 
-
     @FXML
     private void GoEstructura(ActionEvent event) {
+        // Save selections before switching screens
+        selectedDatabase = cb_base.getSelectionModel().getSelectedItem();
+        selectedTableOption = cb_tabla.getSelectionModel().getSelectedItem();
+        selectedTable1 = cb_tabla1.getSelectionModel().getSelectedItem();
+        selectedTable2 = cb_tabla2.getSelectionModel().getSelectedItem();
+
         try {
             ChoiceBox<String> selectedChoiceBox = (event.getSource() == btn_estruc1) ? cb_tabla1 : cb_tabla2;
             String selectedTable = selectedChoiceBox.getSelectionModel().getSelectedItem();
@@ -203,14 +225,17 @@ public class MenuController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("VerEstructura.fxml"));
             Parent root = loader.load();
 
+            // Get the controller instance and set connection, table, and menu scene
             VerEstructuraController estructuraController = loader.getController();
             estructuraController.setConnectionAndTable(connection, selectedTable);
 
+            // Get the current scene to store as menuScene
             Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.show();
+            menuScene = stage.getScene();  // Save the current scene
+            estructuraController.setMenuController(this, menuScene);  // Pass the saved menuScene to VerEstructuraController
 
+            stage.setScene(new Scene(root));  // Set the new scene
+            stage.show();
         } catch (IOException e) {
             showAlert(AlertType.ERROR, "Error de Carga", "No se pudo cargar la pantalla de estructura.");
             e.printStackTrace();
@@ -223,14 +248,12 @@ public class MenuController implements Initializable {
         Parent root = loader.load();
 
         Stage stage = (Stage) btn_regresar.getScene().getWindow();
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
+        stage.setScene(new Scene(root));
         stage.show();
     }
 
     @FXML
     private void GoConsultas(ActionEvent event) {
-        // Lógica para manejar el botón Consultas
+        // Implement query screen transition logic
     }
 }
-
