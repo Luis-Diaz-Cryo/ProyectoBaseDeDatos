@@ -1,14 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
- */
 package proyectobasededatos;
-
-/**
- * FXML Controller class
- *
- * @author marim
- */
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,10 +12,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
-import java.io.IOException;
+import javafx.scene.control.cell.PropertyValueFactory;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -45,27 +33,84 @@ public class VerTablaController implements Initializable {
 
     private Connection connection;
     private String selectedTable;
+    private Scene menuScene;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-        // Inicialización si es necesaria
+        // No static column initialization as columns are dynamic based on the table selected
     }
 
     public void setConnectionAndTable(Connection connection, String selectedTable) {
-        
+        this.connection = connection;
+        this.selectedTable = selectedTable;
+        label_nombre.setText("Contenido de la Tabla: " + selectedTable);
+        mostrarTablaCompleta();
+    }
+
+    public void setMenuScene(Scene menuScene) {
+        this.menuScene = menuScene;
     }
 
     private void mostrarTablaCompleta() {
-        
+        tabla_ver.getColumns().clear();  // Clear previous columns if any
+        ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
+
+        try {
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM " + selectedTable);
+
+            // Get column names and dynamically create TableColumn for each
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            for (int i = 1; i <= columnCount; i++) {
+                final int columnIndex = i;
+                String columnName = metaData.getColumnName(i);
+
+                TableColumn<ObservableList<String>, String> column = new TableColumn<>(columnName);
+                column.setCellValueFactory(param -> {
+                    if (param.getValue().size() > columnIndex - 1) {
+                        return new javafx.beans.property.SimpleStringProperty(param.getValue().get(columnIndex - 1));
+                    } else {
+                        return new javafx.beans.property.SimpleStringProperty("");
+                    }
+                });
+
+                tabla_ver.getColumns().add(column);
+            }
+
+            // Add rows to the table
+            while (resultSet.next()) {
+                ObservableList<String> row = FXCollections.observableArrayList();
+                for (int i = 1; i <= columnCount; i++) {
+                    row.add(resultSet.getString(i));
+                }
+                data.add(row);
+            }
+
+            tabla_ver.setItems(data);
+
+        } catch (SQLException e) {
+            showAlert(AlertType.ERROR, "Error al cargar contenido", "No se pudo cargar el contenido de la tabla: " + e.getMessage());
+        }
     }
 
     @FXML
-    private void DoRegresar(ActionEvent event) throws IOException {
+    private void DoRegresar(ActionEvent event) {
+        System.out.println("Regresar button clicked");
 
+        if (menuScene != null) {
+            Stage stage = (Stage) btn_regresar.getScene().getWindow();
+            stage.setScene(menuScene);  // Go back to the original menu scene
+        } else {
+            System.out.println("menuScene is null. Ensure setMenuScene was called.");
+        }
     }
 
     private void showAlert(AlertType alertType, String title, String message) {
-
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        alert.show();
     }
 }
-

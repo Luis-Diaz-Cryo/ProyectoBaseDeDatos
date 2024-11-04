@@ -197,6 +197,8 @@ public class MenuController implements Initializable {
 
             Stage stage = (Stage) ((Button) event.getSource()).getScene().getWindow();
             menuScene = stage.getScene();  // Save the current scene before switching
+            tablaController.setMenuScene(menuScene);  // Pass the saved menuScene to VerTablaController
+
             stage.setScene(new Scene(root));
             stage.show();
         } catch (IOException e) {
