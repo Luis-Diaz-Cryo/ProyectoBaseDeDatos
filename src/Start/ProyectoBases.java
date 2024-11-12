@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-package proyectobasededatos;
+package Start;
 
 import java.io.IOException;
 import javafx.application.Application;
@@ -16,7 +16,7 @@ public class ProyectoBases extends Application {
     @Override
     public void start(Stage Base) {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("LogIn.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("/Vista/LogIn.fxml"));
             Scene scene = new Scene(root);
             Base.setScene(scene);
             Base.setTitle("QueryEase");

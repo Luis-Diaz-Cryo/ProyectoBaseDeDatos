@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
  */
-package proyectobasededatos;
+package Controllers;
 
 import java.io.IOException;
 import java.net.URL;
@@ -23,6 +23,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
+
 
 /**
  * FXML Controller class
@@ -189,7 +190,7 @@ public class MenuController implements Initializable {
                 return;
             }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("VerTabla.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/VerTabla.fxml"));
             Parent root = loader.load();
 
             VerTablaController tablaController = loader.getController();
@@ -224,7 +225,7 @@ public class MenuController implements Initializable {
                 return;
             }
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("VerEstructura.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/VerEstructura.fxml"));
             Parent root = loader.load();
 
             // Get the controller instance and set connection, table, and menu scene
@@ -246,7 +247,7 @@ public class MenuController implements Initializable {
 
     @FXML
     private void GoRegresar(ActionEvent event) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("LogIn.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/LogIn.fxml"));
         Parent root = loader.load();
 
         Stage stage = (Stage) btn_regresar.getScene().getWindow();

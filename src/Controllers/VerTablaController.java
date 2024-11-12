@@ -1,4 +1,4 @@
-package proyectobasededatos;
+package Controllers;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

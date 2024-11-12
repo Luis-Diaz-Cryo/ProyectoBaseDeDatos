@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/javafx/FXMLController.java to edit this template
  */
-package proyectobasededatos;
+package Controllers;
 
 import java.io.IOException;
 import java.net.URL;
@@ -80,7 +80,7 @@ public class LogInController implements Initializable {
     private void goToMenu() {
         try {
             // Cargar el archivo FXML del menú
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("Menu.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/Menu.fxml"));
             Parent root = loader.load();
 
             // Obtener el controlador del menú
