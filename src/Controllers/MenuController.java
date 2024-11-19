@@ -24,7 +24,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
-
 /**
  * FXML Controller class
  */
@@ -256,7 +255,34 @@ public class MenuController implements Initializable {
     }
 
     @FXML
-    private void GoConsultas(ActionEvent event) {
-        // Implement query screen transition logic
+    private void GoConsultas(ActionEvent event) throws IOException {
+        String tabla = cb_tabla1.getSelectionModel().getSelectedItem();
+        String tabla2 = cb_tabla2.getSelectionModel().getSelectedItem();
+        String numTablas = cb_tabla.getSelectionModel().getSelectedItem();
+        if (tabla == null) {
+            showAlert(Alert.AlertType.WARNING, "Tabla no seleccionada", "Por favor, seleccione una tabla para realizar consultas.");
+            return;
+        }
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/VentanaPrueba.fxml"));
+        Parent root = loader.load();
+
+        VentanaPruebaController escena = loader.getController();
+        escena.setConnection(connection);
+        escena.setTable(tabla);
+
+        if ("2".equals(numTablas) && tabla2 != null) {
+            escena.setTableRelation(tabla2, true);
+        } else {
+            escena.setTableRelation(null, false);
+        }
+
+        // Pass the current menu scene
+        Scene currentScene = ((Button) event.getSource()).getScene();
+        escena.setMenuScene(currentScene); // Pass menuScene to VentanaPruebaController
+
+        Stage stage = (Stage) btn_consultas.getScene().getWindow();
+        stage.setScene(new Scene(root));
+        stage.show();
     }
 }

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane id="AnchorPane" prefHeight="494.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.VentanaPruebaController">
+   <children>
+      <VBox alignment="CENTER" layoutX="18.0" layoutY="23.0" spacing="10" style="-fx-padding: 10;">
+         <children>
+            <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Consultas de Base de Datos" />
+            <HBox spacing="10" style="-fx-padding: 10;">
+               <children>
+                  <Label text="Tabla 1:" />
+                  <ComboBox fx:id="tabla1ComboBox" prefWidth="150" />
+                  <Label text="Campo para relación:" />
+                  <ComboBox fx:id="campo1ComboBox" prefWidth="150" />
+               </children>
+            </HBox>
+            <HBox spacing="10" style="-fx-padding: 10;">
+               <children>
+                  <Label text="Tabla 2:" />
+                  <ComboBox fx:id="tabla2ComboBox" prefWidth="150" />
+                  <Label text="Campo para relación:" />
+                  <ComboBox fx:id="campo2ComboBox" prefWidth="150" />
+               </children>
+            </HBox>
+            <HBox spacing="10">
+               <children>
+                  <ComboBox fx:id="operadorComboBox" prefWidth="120" promptText="Operador" />
+                  <TextField fx:id="valorTextField" prefWidth="120" promptText="Valor" />
+                  <Button fx:id="agregarCondicionButton" text="Agregar Condición" />
+               </children>
+            </HBox>
+            <HBox spacing="10">
+               <children>
+                  <Button fx:id="andButton" text="AND" />
+                  <Button fx:id="orButton" text="OR" />
+                  <Button fx:id="buscarButton" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Buscar" />
+                  <Button fx:id="limpiarButton" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Limpiar" />
+               </children>
+            </HBox>
+            <TextArea fx:id="consultaGeneradaTextArea" editable="false" prefHeight="0.0" prefWidth="700" wrapText="true" />
+            <TableView fx:id="resultadoTable" editable="true" prefHeight="300" prefWidth="700" />
+            <HBox spacing="10">
+               <children>
+                  <Button fx:id="agregarButton" text="Agregar Registro" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+                  <Button fx:id="eliminarButton" text="Eliminar Registro" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+                  <Button fx:id="guardarButton" text="Guardar Cambios" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <Button fx:id="regresarButton" alignment="TOP_LEFT" layoutX="12.0" layoutY="13.0" style="-fx-background-color: #FF5733; -fx-text-fill: white;" text="Regresar" />
+   </children>
+</AnchorPane>
