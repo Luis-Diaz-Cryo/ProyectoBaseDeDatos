@@ -108,12 +108,31 @@ public class VentanaPruebaController implements Initializable {
     }
 
     private void agregarRegistro() {
-        ObservableList<String> nuevaFila = FXCollections.observableArrayList();
-        for (TableColumn<ObservableList<String>, ?> columna : resultadoTable.getColumns()) {
-            nuevaFila.add("");
+        if (currentTable == null || currentTable.isEmpty()) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Tabla no seleccionada", "Por favor selecciona una tabla primero.");
+            return;
         }
-        tableData.add(nuevaFila);
-        resultadoTable.setItems(tableData);
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/nuevoRegistro.fxml"));
+            Parent root = loader.load();
+
+            // Pass necessary data to the new controller
+            NuevoRegistroController controller = loader.getController();
+            controller.setConnection(connection);
+            controller.setTable(currentTable);
+            controller.setOnSave(() -> ejecutarConsulta());
+
+            // Open the new window
+            Stage stage = new Stage();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Agregar Nuevo Registro");
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace(); // Log detailed error
+            mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se pudo abrir la ventana de nuevo registro. Verifica la ubicación del archivo FXML.");
+        }
     }
 
     private void cargarCampos(String tabla, ComboBox<String> campoComboBox) {
@@ -142,6 +161,15 @@ public class VentanaPruebaController implements Initializable {
         }
 
         cargarDatosEnTabla(consultaBase);
+    }
+
+    private void actualizarCelda(TableColumn.CellEditEvent<ObservableList<String>, String> event) {
+        int filaIndex = event.getTablePosition().getRow();
+        int columnaIndex = event.getTablePosition().getColumn();
+        ObservableList<String> fila = tableData.get(filaIndex);
+
+        fila.set(columnaIndex, event.getNewValue());
+        filasTemp.add(fila);
     }
 
     private void cargarDatosEnTabla(String consulta) {
@@ -174,14 +202,34 @@ public class VentanaPruebaController implements Initializable {
     }
 
     private String getPrimaryKeyColumn(String tableName) {
+        System.out.println("Fetching primary key for table: " + tableName);
+        String primaryKey = null;
+
+        // Try fetching primary key from metadata
         try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, null, tableName)) {
             if (rs.next()) {
-                return rs.getString("COLUMN_NAME");
+                primaryKey = rs.getString("COLUMN_NAME");
+                System.out.println("Primary key retrieved from metadata: " + primaryKey);
+                return primaryKey;
             }
         } catch (SQLException e) {
-            mostrarAlerta(Alert.AlertType.ERROR, "Error al obtener la clave primaria", e.getMessage());
+            System.err.println("Error fetching primary key from metadata: " + e.getMessage());
         }
-        return null;
+
+        // Fallback: Use SHOW KEYS query
+        String fallbackQuery = "SHOW KEYS FROM " + tableName + " WHERE Key_name = 'PRIMARY'";
+        try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(fallbackQuery)) {
+            if (rs.next()) {
+                primaryKey = rs.getString("Column_name");
+                System.out.println("Primary key retrieved from fallback query: " + primaryKey);
+                return primaryKey;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching primary key from fallback query: " + e.getMessage());
+        }
+
+        System.err.println("No primary key found for table: " + tableName);
+        return primaryKey;
     }
 
     private void eliminarRegistro() {
@@ -189,6 +237,10 @@ public class VentanaPruebaController implements Initializable {
 
         if (filaSeleccionada != null) {
             String primaryKeyColumn = getPrimaryKeyColumn(currentTable);
+            if (primaryKeyColumn == null) {
+                System.err.println("No primary key found for table " + currentTable); // Debug log
+                return;
+            }
 
             Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION);
             confirmacion.setTitle("Confirmación de eliminación");
@@ -198,50 +250,23 @@ public class VentanaPruebaController implements Initializable {
             Optional<ButtonType> resultado = confirmacion.showAndWait();
             if (resultado.isPresent() && resultado.get() == ButtonType.OK) {
                 try {
-                    String consulta;
-                    if (primaryKeyColumn != null) {
-                        // tenemos primary key 
-                        String id = filaSeleccionada.get(0);
-                        consulta = "DELETE FROM " + currentTable + " WHERE " + primaryKeyColumn + " = ?";
-                        try (PreparedStatement pstmt = connection.prepareStatement(consulta)) {
-                            pstmt.setString(1, id);
-                            int filasAfectadas = pstmt.executeUpdate();
+                    String id = filaSeleccionada.get(0); // Assuming the primary key is in the first column
+                    String consulta = "DELETE FROM " + currentTable + " WHERE " + primaryKeyColumn + " = ?";
+                    System.out.println("Generated SQL Query for Delete: " + consulta); // Debug log
+                    System.out.println("Primary key value: " + id); // Debug log
 
-                            if (filasAfectadas > 0) {
-                                resultadoTable.getItems().remove(filaSeleccionada);
-                                mostrarAlerta(Alert.AlertType.INFORMATION, "Eliminación exitosa", "El registro ha sido eliminado correctamente.");
-                            } else {
-                                mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se encontró el registro para eliminar.");
-                            }
-                        }
-                    } else {
-                        // No primary key
-                        StringBuilder whereClause = new StringBuilder();
-                        ObservableList<TableColumn<ObservableList<String>, ?>> columnas = resultadoTable.getColumns();
-                        for (int i = 0; i < columnas.size(); i++) {
-                            if (i > 0) {
-                                whereClause.append(" AND ");
-                            }
-                            String columnName = columnas.get(i).getText();
-                            whereClause.append(columnName).append(" = ?");
-                        }
+                    try (PreparedStatement pstmt = connection.prepareStatement(consulta)) {
+                        pstmt.setString(1, id);
+                        int filasAfectadas = pstmt.executeUpdate();
+                        System.out.println("Rows deleted: " + filasAfectadas); // Debug log
 
-                        consulta = "DELETE FROM " + currentTable + " WHERE " + whereClause;
-                        try (PreparedStatement pstmt = connection.prepareStatement(consulta)) {
-                            for (int i = 0; i < filaSeleccionada.size(); i++) {
-                                pstmt.setString(i + 1, filaSeleccionada.get(i));
-                            }
-                            int filasAfectadas = pstmt.executeUpdate();
-
-                            if (filasAfectadas > 0) {
-                                resultadoTable.getItems().remove(filaSeleccionada);
-                                mostrarAlerta(Alert.AlertType.INFORMATION, "Eliminación exitosa", "El registro ha sido eliminado correctamente.");
-                            } else {
-                                mostrarAlerta(Alert.AlertType.ERROR, "Error", "No se encontró el registro para eliminar.");
-                            }
+                        if (filasAfectadas > 0) {
+                            mostrarAlerta(Alert.AlertType.INFORMATION, "Eliminación exitosa", "El registro ha sido eliminado.");
+                            ejecutarConsulta(); // Refresh the table
                         }
                     }
                 } catch (SQLException e) {
+                    System.err.println("Error during delete: " + e.getMessage()); // Debug log
                     mostrarAlerta(Alert.AlertType.ERROR, "Error al eliminar", e.getMessage());
                 }
             }
@@ -250,78 +275,49 @@ public class VentanaPruebaController implements Initializable {
         }
     }
 
-    private void actualizarCelda(TableColumn.CellEditEvent<ObservableList<String>, String> event) {
-        int filaIndex = event.getTablePosition().getRow();
-        int columnaIndex = event.getTablePosition().getColumn();
-        ObservableList<String> fila = tableData.get(filaIndex);
-
-        fila.set(columnaIndex, event.getNewValue());
-        filasTemp.add(fila);
-    }
-
     private void guardarCambios() {
         boolean hayErrores = false;
+
         for (ObservableList<String> fila : filasTemp) {
             try {
                 String primaryKeyColumn = getPrimaryKeyColumn(currentTable);
-
-                StringBuilder consulta = new StringBuilder("UPDATE " + currentTable + " SET ");
-                boolean hayModificaciones = false;
-
-                for (int i = 1; i < resultadoTable.getColumns().size(); i++) {
-                    TableColumn<ObservableList<String>, ?> columna = resultadoTable.getColumns().get(i);
-                    String nombreColumna = columna.getText();
-                    String valor = fila.get(i);
-
-                    if (valor != null && !valor.isEmpty()) {
-                        if (hayModificaciones) {
-                            consulta.append(", ");
-                        }
-                        consulta.append(nombreColumna).append(" = '").append(valor).append("'");
-                        hayModificaciones = true;
-                    }
+                if (primaryKeyColumn == null) {
+                    System.err.println("No primary key found for table " + currentTable + ". Skipping this row.");
+                    continue;
                 }
 
-                if (hayModificaciones) {
-                    if (primaryKeyColumn != null) {
-                        // Use primary key for WHERE clause
-                        String id = fila.get(0);
-                        consulta.append(" WHERE ").append(primaryKeyColumn).append(" = ?");
-                        try (PreparedStatement pstmt = connection.prepareStatement(consulta.toString())) {
-                            pstmt.setString(1, id);
-                            pstmt.executeUpdate();
-                        }
-                    } else {
-                        // No primary key, construct WHERE clause using all columns
-                        StringBuilder whereClause = new StringBuilder();
-                        ObservableList<TableColumn<ObservableList<String>, ?>> columnas = resultadoTable.getColumns();
-                        for (int i = 0; i < columnas.size(); i++) {
-                            if (i > 0) {
-                                whereClause.append(" AND ");
-                            }
-                            String columnName = columnas.get(i).getText();
-                            whereClause.append(columnName).append(" = ?");
-                        }
-
-                        consulta.append(" WHERE ").append(whereClause);
-                        try (PreparedStatement pstmt = connection.prepareStatement(consulta.toString())) {
-                            for (int i = 0; i < fila.size(); i++) {
-                                pstmt.setString(i + 1, fila.get(i));
-                            }
-                            pstmt.executeUpdate();
-                        }
+                // Perform UPDATE for existing rows
+                StringBuilder updateQuery = new StringBuilder("UPDATE ").append(currentTable).append(" SET ");
+                for (int i = 1; i < fila.size(); i++) {
+                    if (i > 1) {
+                        updateQuery.append(", ");
                     }
+                    updateQuery.append(resultadoTable.getColumns().get(i).getText()).append(" = ?");
                 }
+                updateQuery.append(" WHERE ").append(primaryKeyColumn).append(" = ?");
+
+                System.out.println("Generated SQL Query Template for Update: " + updateQuery); // Debug log
+
+                try (PreparedStatement pstmt = connection.prepareStatement(updateQuery.toString())) {
+                    for (int i = 1; i < fila.size(); i++) {
+                        pstmt.setString(i, fila.get(i));
+                    }
+                    pstmt.setString(fila.size(), fila.get(0));
+                    int filasAfectadas = pstmt.executeUpdate();
+                    System.out.println("Rows updated: " + filasAfectadas); // Debug log
+                }
+
             } catch (SQLException e) {
                 hayErrores = true;
+                System.err.println("Error during update: " + e.getMessage()); // Debug log
                 mostrarAlerta(Alert.AlertType.ERROR, "Error al guardar cambios", e.getMessage());
             }
         }
 
         if (!hayErrores) {
-            mostrarAlerta(Alert.AlertType.INFORMATION, "Confirmación de Guardado", "Los cambios se han guardado correctamente.");
+            mostrarAlerta(Alert.AlertType.INFORMATION, "Guardado Exitoso", "Los cambios se han guardado correctamente.");
+            ejecutarConsulta(); // Refresh the table
         }
-
         filasTemp.clear();
     }
 
