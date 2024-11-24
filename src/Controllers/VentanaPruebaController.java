@@ -13,13 +13,17 @@ import javafx.util.converter.DefaultStringConverter;
 
 import java.net.URL;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class VentanaPruebaController implements Initializable {
@@ -51,7 +55,13 @@ public class VentanaPruebaController implements Initializable {
     @FXML
     private Button guardarButton;
     @FXML
+    private VBox columnasContainer;
+    @FXML
+    private Button agregarColumnaButton;
+    @FXML
     private TextArea consultaGeneradaTextArea;
+    @FXML
+    private ComboBox<String> consultaCampoComboBox;
     @FXML
     private TableView<ObservableList<String>> resultadoTable;
 
@@ -81,22 +91,40 @@ public class VentanaPruebaController implements Initializable {
             this.currentTable = table;
             tabla1ComboBox.getSelectionModel().select(table);
             cargarCampos(table, campo1ComboBox);
+            cargarCampos(table, consultaCampoComboBox);
+
         }
     }
 
     public void setTableRelation(String relatedTable, boolean isRelationEnabled) {
         this.isRelationEnabled = isRelationEnabled;
         this.relatedTable = relatedTable;
-        if (isRelationEnabled && relatedTable != null) {
-            tabla2ComboBox.getSelectionModel().select(relatedTable);
-            cargarCampos(relatedTable, campo2ComboBox);
+
+        if (isRelationEnabled) {
+            
+            if (currentTable != null) {
+                tabla1ComboBox.setDisable(false); // Ensure it's enabled
+                campo1ComboBox.setDisable(false); // Ensure it's enabled
+                tabla1ComboBox.getSelectionModel().select(currentTable);
+                cargarCampos(currentTable, campo1ComboBox);
+            }
+
+            
+            if (relatedTable != null) {
+                tabla2ComboBox.setDisable(false); // Ensure it's enabled
+                campo2ComboBox.setDisable(false); // Ensure it's enabled
+                tabla2ComboBox.getSelectionModel().select(relatedTable);
+                cargarCampos(relatedTable, campo2ComboBox);
+            }
         } else {
+            
             tabla2ComboBox.setDisable(true);
             campo2ComboBox.setDisable(true);
         }
     }
 
     private void configurarEventos() {
+        agregarColumnaButton.setOnAction(event -> agregarColumna());
         agregarCondicionButton.setOnAction(this::agregarCondicion);
         buscarButton.setOnAction(event -> ejecutarConsulta());
         limpiarButton.setOnAction(event -> limpiarConsulta());
@@ -107,7 +135,15 @@ public class VentanaPruebaController implements Initializable {
         tabla1ComboBox.setOnAction(event -> cargarCampos(tabla1ComboBox.getValue(), campo1ComboBox));
     }
 
-    private void agregarRegistro() {
+    public void agregarColumna() {
+        ComboBox<String> nuevaColumna = new ComboBox<>();
+        nuevaColumna.setPromptText("Seleccionar columna");
+        nuevaColumna.setPrefWidth(200);
+        cargarCampos(currentTable, nuevaColumna);
+        columnasContainer.getChildren().add(nuevaColumna);
+    }
+
+    public void agregarRegistro() {
         if (currentTable == null || currentTable.isEmpty()) {
             mostrarAlerta(Alert.AlertType.WARNING, "Tabla no seleccionada", "Por favor selecciona una tabla primero.");
             return;
@@ -117,13 +153,11 @@ public class VentanaPruebaController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/Vista/nuevoRegistro.fxml"));
             Parent root = loader.load();
 
-            // Pass necessary data to the new controller
             NuevoRegistroController controller = loader.getController();
             controller.setConnection(connection);
             controller.setTable(currentTable);
             controller.setOnSave(() -> ejecutarConsulta());
 
-            // Open the new window
             Stage stage = new Stage();
             stage.setScene(new Scene(root));
             stage.setTitle("Agregar Nuevo Registro");
@@ -135,35 +169,52 @@ public class VentanaPruebaController implements Initializable {
         }
     }
 
-    private void cargarCampos(String tabla, ComboBox<String> campoComboBox) {
+    public void cargarCampos(String tabla, ComboBox<String> campoComboBox) {
+        System.out.println("Loading columns for table: " + tabla);
+
         if (tabla != null && !tabla.isEmpty()) {
-            try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + tabla)) {
+            try (Statement stmt = connection.createStatement();
+                    ResultSet rs = stmt.executeQuery("SHOW COLUMNS FROM " + tabla)) {
+
                 ObservableList<String> campos = FXCollections.observableArrayList();
                 while (rs.next()) {
                     campos.add(rs.getString("Field"));
                 }
                 campoComboBox.setItems(campos);
+                System.out.println("Columns loaded: " + campos);
             } catch (SQLException e) {
                 mostrarAlerta(Alert.AlertType.ERROR, "Error al cargar campos", e.getMessage());
             }
+        } else {
+            System.out.println("No table selected to load columns");
         }
     }
 
-    private void ejecutarConsulta() {
-        String consultaBase = "SELECT * FROM " + currentTable;
+    public void ejecutarConsulta() {
+        StringBuilder consultaBase = new StringBuilder("SELECT ");
+        List<String> selectedColumns = getSelectedColumns();
+        consultaBase.append(selectedColumns.isEmpty() ? "*" : String.join(", ", selectedColumns));
+        consultaBase.append(" FROM ").append(currentTable);
+
         if (isRelationEnabled && relatedTable != null) {
             String campo1 = campo1ComboBox.getValue();
             String campo2 = campo2ComboBox.getValue();
-            consultaBase += " JOIN " + relatedTable + " ON " + currentTable + "." + campo1 + " = " + relatedTable + "." + campo2;
-        }
-        if (consultaGenerada.length() > 0) {
-            consultaBase += " WHERE " + consultaGenerada;
+
+            consultaBase.append(", ").append(relatedTable).append(" WHERE ");
+            consultaBase.append(currentTable).append(".").append(campo1).append(" = ").append(relatedTable).append(".").append(campo2);
+
+            if (consultaGenerada.length() > 0) {
+                consultaBase.append(" AND ").append(consultaGenerada);
+            }
+        } else if (consultaGenerada.length() > 0) {
+            consultaBase.append(" WHERE ").append(consultaGenerada);
         }
 
-        cargarDatosEnTabla(consultaBase);
+        consultaGeneradaTextArea.setText(consultaBase.toString());
+        cargarDatosEnTabla(consultaBase.toString());
     }
 
-    private void actualizarCelda(TableColumn.CellEditEvent<ObservableList<String>, String> event) {
+    public void actualizarCelda(TableColumn.CellEditEvent<ObservableList<String>, String> event) {
         int filaIndex = event.getTablePosition().getRow();
         int columnaIndex = event.getTablePosition().getColumn();
         ObservableList<String> fila = tableData.get(filaIndex);
@@ -172,7 +223,7 @@ public class VentanaPruebaController implements Initializable {
         filasTemp.add(fila);
     }
 
-    private void cargarDatosEnTabla(String consulta) {
+    public void cargarDatosEnTabla(String consulta) {
         resultadoTable.getColumns().clear();
         tableData = FXCollections.observableArrayList();
 
@@ -201,7 +252,7 @@ public class VentanaPruebaController implements Initializable {
         }
     }
 
-    private String getPrimaryKeyColumn(String tableName) {
+    public String getPrimaryKeyColumn(String tableName) {
         System.out.println("Fetching primary key for table: " + tableName);
         String primaryKey = null;
 
@@ -232,7 +283,20 @@ public class VentanaPruebaController implements Initializable {
         return primaryKey;
     }
 
-    private void eliminarRegistro() {
+    public List<String> getSelectedColumns() {
+        List<String> selectedColumns = new ArrayList<>();
+        for (Node node : columnasContainer.getChildren()) {
+            if (node instanceof ComboBox) {
+                String column = ((ComboBox<String>) node).getValue();
+                if (column != null && !column.isEmpty()) {
+                    selectedColumns.add(column);
+                }
+            }
+        }
+        return selectedColumns;
+    }
+
+    public void eliminarRegistro() {
         ObservableList<String> filaSeleccionada = resultadoTable.getSelectionModel().getSelectedItem();
 
         if (filaSeleccionada != null) {
@@ -275,7 +339,7 @@ public class VentanaPruebaController implements Initializable {
         }
     }
 
-    private void guardarCambios() {
+    public void guardarCambios() {
         boolean hayErrores = false;
 
         for (ObservableList<String> fila : filasTemp) {
@@ -321,7 +385,7 @@ public class VentanaPruebaController implements Initializable {
         filasTemp.clear();
     }
 
-    private void mostrarAlerta(Alert.AlertType tipo, String titulo, String mensaje) {
+    public void mostrarAlerta(Alert.AlertType tipo, String titulo, String mensaje) {
         Alert alerta = new Alert(tipo);
         alerta.setTitle(titulo);
         alerta.setContentText(mensaje);
@@ -332,7 +396,7 @@ public class VentanaPruebaController implements Initializable {
         this.menuScene = menuScene;
     }
 
-    private void regresar() {
+    public void regresar() {
         if (menuScene != null) {
             Stage stage = (Stage) regresarButton.getScene().getWindow();
             stage.setScene(menuScene);
@@ -341,27 +405,30 @@ public class VentanaPruebaController implements Initializable {
         }
     }
 
-    private void agregarCondicion(ActionEvent event) {
-        String campo = campo1ComboBox.getValue();
+    public void agregarCondicion(ActionEvent event) {
+        String consultaCampo = consultaCampoComboBox.getValue();
         String operador = operadorComboBox.getValue();
         String valor = valorTextField.getText();
 
-        if (campo == null || operador == null || (operador.contains("NULL") || (valor != null && !valor.isEmpty()))) {
-            if (consultaGenerada.length() > 0) {
-                consultaGenerada.append(" AND ");
-            }
-            consultaGenerada.append(campo).append(" ").append(operador).append(" ");
-            if (!operador.contains("NULL")) {
-                consultaGenerada.append("'").append(valor).append("'");
-            }
-            consultaGeneradaTextArea.setText(consultaGenerada.toString());
-        } else {
-            mostrarAlerta(Alert.AlertType.WARNING, "Condición inválida", "La condición no puede ser vacía o incorrecta.");
+        if (consultaCampo == null || operador == null || (valor == null && !operador.contains("NULL"))) {
+            mostrarAlerta(Alert.AlertType.WARNING, "Condición inválida", "Por favor selecciona un campo, operador y valor válidos.");
+            return;
         }
+
+        if (consultaGenerada.length() > 0) {
+            consultaGenerada.append(" AND ");
+        }
+        consultaGenerada.append(consultaCampo).append(" ").append(operador).append(" ");
+        if (!operador.contains("NULL")) {
+            consultaGenerada.append("'").append(valor).append("'");
+        }
+
+        consultaGeneradaTextArea.setText(consultaGenerada.toString());
     }
 
-    private void limpiarConsulta() {
+    public void limpiarConsulta() {
         consultaGenerada.setLength(0);
         consultaGeneradaTextArea.clear();
+        columnasContainer.getChildren().clear();
     }
 }

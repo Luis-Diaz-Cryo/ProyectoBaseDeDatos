@@ -2,12 +2,40 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.NuevoRegistroController" prefHeight="400.0" prefWidth="600.0">
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.NuevoRegistroController" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: D0FDFF;">
     <children>
-        <VBox fx:id="inputContainer" spacing="10" alignment="CENTER" AnchorPane.topAnchor="50.0" AnchorPane.leftAnchor="50.0" AnchorPane.rightAnchor="50.0">
-            <!-- Fields will be dynamically added here -->
-        </VBox>
-        <Button fx:id="saveButton" text="Guardar" onAction="#saveRecord" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+        <!-- Header Section -->
+        <AnchorPane layoutX="14.0" layoutY="14.0" prefHeight="75.0" prefWidth="571.0" style="-fx-background-color: E4FEFF; -fx-border-color: #458EA4;">
+            <children>
+                <Text layoutX="207.0" layoutY="49.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Nuevo Registro">
+                    <font>
+                        <Font name="System Bold" size="28.0" />
+                    </font>
+                </Text>
+            </children>
+        </AnchorPane>
+
+        <!-- Scrollable Input Section -->
+        <AnchorPane layoutX="14.0" layoutY="100.0" prefHeight="230.0" prefWidth="571.0" style="-fx-background-color: E4FEFF; -fx-border-color: #458EA4;">
+            <children>
+                <ScrollPane fx:id="scrollPane" fitToWidth="true" fitToHeight="true" layoutX="10.0" layoutY="10.0" prefHeight="210.0" prefWidth="551.0" style="-fx-background-color: transparent;">
+                    <content>
+                        <VBox fx:id="inputContainer" spacing="10" alignment="CENTER" style="-fx-padding: 10;">
+                            <!-- Fields will be dynamically added here -->
+                           
+                        </VBox>
+                    </content>
+                </ScrollPane>
+            </children>
+        </AnchorPane>
+
+        <!-- Save Button -->
+        <Button fx:id="saveButton" layoutX="495.0" layoutY="340.0" mnemonicParsing="false" onAction="#saveRecord" style="-fx-background-color: #458EA4; -fx-background-radius: 8;" text="Guardar" textFill="WHITE">
+            <font>
+                <Font name="Arial Bold" size="16.0" />
+            </font>
+        </Button>
     </children>
 </AnchorPane>

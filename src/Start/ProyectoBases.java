@@ -21,6 +21,7 @@ public class ProyectoBases extends Application {
             Base.setScene(scene);
             Base.setTitle("QueryEase");
             Base.setResizable(false);
+            Base.centerOnScreen();
             Base.show();
         } catch (IOException e) {
             e.printStackTrace();

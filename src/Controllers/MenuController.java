@@ -283,6 +283,7 @@ public class MenuController implements Initializable {
 
         Stage stage = (Stage) btn_consultas.getScene().getWindow();
         stage.setScene(new Scene(root));
+        stage.centerOnScreen();
         stage.show();
     }
 }

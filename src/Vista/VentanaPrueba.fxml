@@ -10,53 +10,77 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" prefHeight="494.0" prefWidth="651.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.VentanaPruebaController">
-   <children>
-      <VBox alignment="CENTER" layoutX="18.0" layoutY="23.0" spacing="10" style="-fx-padding: 10;">
-         <children>
-            <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Consultas de Base de Datos" />
-            <HBox spacing="10" style="-fx-padding: 10;">
-               <children>
-                  <Label text="Tabla 1:" />
-                  <ComboBox fx:id="tabla1ComboBox" prefWidth="150" />
-                  <Label text="Campo para relación:" />
-                  <ComboBox fx:id="campo1ComboBox" prefWidth="150" />
-               </children>
-            </HBox>
-            <HBox spacing="10" style="-fx-padding: 10;">
-               <children>
-                  <Label text="Tabla 2:" />
-                  <ComboBox fx:id="tabla2ComboBox" prefWidth="150" />
-                  <Label text="Campo para relación:" />
-                  <ComboBox fx:id="campo2ComboBox" prefWidth="150" />
-               </children>
-            </HBox>
-            <HBox spacing="10">
-               <children>
-                  <ComboBox fx:id="operadorComboBox" prefWidth="120" promptText="Operador" />
-                  <TextField fx:id="valorTextField" prefWidth="120" promptText="Valor" />
-                  <Button fx:id="agregarCondicionButton" text="Agregar Condición" />
-               </children>
-            </HBox>
-            <HBox spacing="10">
-               <children>
-                  <Button fx:id="andButton" text="AND" />
-                  <Button fx:id="orButton" text="OR" />
-                  <Button fx:id="buscarButton" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Buscar" />
-                  <Button fx:id="limpiarButton" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Limpiar" />
-               </children>
-            </HBox>
-            <TextArea fx:id="consultaGeneradaTextArea" editable="false" prefHeight="0.0" prefWidth="700" wrapText="true" />
-            <TableView fx:id="resultadoTable" editable="true" prefHeight="300" prefWidth="700" />
-            <HBox spacing="10">
-               <children>
-                  <Button fx:id="agregarButton" text="Agregar Registro" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
-                  <Button fx:id="eliminarButton" text="Eliminar Registro" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
-                  <Button fx:id="guardarButton" text="Guardar Cambios" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
-               </children>
-            </HBox>
-         </children>
-      </VBox>
-      <Button fx:id="regresarButton" alignment="TOP_LEFT" layoutX="12.0" layoutY="13.0" style="-fx-background-color: #FF5733; -fx-text-fill: white;" text="Regresar" />
-   </children>
+<AnchorPane id="AnchorPane" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.VentanaPruebaController">
+    <children>
+        <!-- Left Section -->
+        <VBox alignment="CENTER" layoutX="18.0" layoutY="23.0" prefWidth="400.0" spacing="10" style="-fx-padding: 10;">
+            <children>
+                <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Consultas de Base de Datos" />
+                <HBox spacing="10" style="-fx-padding: 10;">
+                    <children>
+                        <Label text="Tabla 1:" />
+                        <ComboBox fx:id="tabla1ComboBox" prefWidth="150"  />
+                        <Label text="Campo para relación:" />
+                        <ComboBox fx:id="campo1ComboBox" prefWidth="150" disable="true" />
+                    </children>
+                </HBox>
+                <HBox spacing="10" style="-fx-padding: 10;">
+                    <children>
+                        <Label text="Tabla 2:" />
+                        <ComboBox fx:id="tabla2ComboBox" prefWidth="150"  />
+                        <Label text="Campo para relación:" />
+                        <ComboBox fx:id="campo2ComboBox" prefWidth="150" disable="true" />
+                    </children>
+                </HBox>
+                <HBox spacing="10" style="-fx-padding: 10;">
+                    <children>
+                        <Label text="Seleccionar columnas:" />
+                        <Button fx:id="agregarColumnaButton" text="Agregar columna" onAction="#agregarColumna" />
+                    </children>
+                </HBox>
+                <VBox fx:id="columnasContainer" spacing="10" style="-fx-padding: 10;">
+                    <!-- Dynamic ComboBoxes for selecting columns will be added here -->
+                </VBox>
+                <HBox spacing="10">
+                    <children>
+                        <Label text="Consulta columna:" />
+                        <ComboBox fx:id="consultaCampoComboBox" promptText="Seleccionar columna" prefWidth="150" />
+                    </children>
+                </HBox>
+                <HBox spacing="10">
+                    <children>
+                        <ComboBox fx:id="operadorComboBox" prefWidth="120" promptText="Operador" />
+                        <TextField fx:id="valorTextField" prefWidth="120" promptText="Valor" />
+                        <Button fx:id="agregarCondicionButton" text="Agregar Condición" onAction="#agregarCondicion" />
+                    </children>
+                </HBox>
+                <HBox spacing="10">
+                    <children>
+                        <Button fx:id="andButton" text="AND" />
+                        <Button fx:id="orButton" text="OR" />
+                        <Button fx:id="buscarButton" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Buscar" onAction="#ejecutarConsulta" />
+                        <Button fx:id="limpiarButton" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Limpiar" onAction="#limpiarConsulta" />
+                    </children>
+                </HBox>
+                <TextArea fx:id="consultaGeneradaTextArea" editable="false" prefHeight="120.0" wrapText="true" />
+            </children>
+        </VBox>
+
+        <!-- Right Section -->
+        <VBox layoutX="450.0" layoutY="23.0" prefWidth="525.0" spacing="10" style="-fx-padding: 10;">
+            <children>
+                <TableView fx:id="resultadoTable" editable="true" prefHeight="450.0" prefWidth="525.0" />
+                <HBox spacing="10">
+                    <children>
+                        <Button fx:id="agregarButton" style="-fx-background-color: #2196F3; -fx-text-fill: white;" text="Agregar Registro" onAction="#agregarRegistro" />
+                        <Button fx:id="eliminarButton" style="-fx-background-color: #f44336; -fx-text-fill: white;" text="Eliminar Registro" onAction="#eliminarRegistro" />
+                        <Button fx:id="guardarButton" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" text="Guardar Cambios" onAction="#guardarCambios" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+
+        <!-- Back Button -->
+        <Button fx:id="regresarButton" alignment="TOP_LEFT" layoutX="12.0" layoutY="13.0" style="-fx-background-color: #FF5733; -fx-text-fill: white;" text="Regresar" onAction="#regresar" />
+    </children>
 </AnchorPane>
